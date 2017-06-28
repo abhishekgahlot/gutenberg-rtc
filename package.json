@@ -14,7 +14,8 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-react": "^6.24.1",
     "babelify": "^7.3.0",
-    "http-server": "^0.10.0"
+    "http-server": "^0.10.0",
+    "standard": "^10.0.2"
   },
   "dependencies": {
     "simple-peer": "^8.1.1",
