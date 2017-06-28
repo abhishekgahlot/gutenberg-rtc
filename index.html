@@ -13,8 +13,9 @@
     <pre id="outgoing"></pre>
     <script src="bundle.js"></script>
     <script>
-        
-
+        if (!GRTC.queryParameter(window.location.search)) {
+          console.log(window.location.href+='?collaborate='+GRTC.uuid())
+        }
     </script>
   </body>
 </html>

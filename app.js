@@ -3,6 +3,11 @@
 const Peer = require('simple-peer');
 const uuidv1 = require('uuid/v1');
 
+class Signal {
+    constructor() {
+        
+    }
+}
 
 class GRTC {
 	constructor(uuid, joinee) {
@@ -10,6 +15,11 @@ class GRTC {
         this.signal = null;
         this.joinee = joinee;
         this.start();
+    }
+
+    static queryParameter(queryString) {
+        let queryIndex = queryString.indexOf('collaborate');
+        return queryString.substring(queryIndex, queryIndex + 48).split('=').pop();
     }
 
     static uuid() {
