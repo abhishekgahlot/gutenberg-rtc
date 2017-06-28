@@ -1,21 +1,15 @@
 <html>
   <body>
-    <style>
-      #outgoing {
-        width: 600px;
-        word-wrap: break-word;
-      }
-    </style>
-    <form>
-      <textarea id="incoming"></textarea>
-      <button type="submit">submit</button>
-    </form>
-    <pre id="outgoing"></pre>
     <script src="bundle.js"></script>
     <script>
-        if (!GRTC.queryParameter(window.location.search)) {
-          console.log(window.location.href+='?collaborate='+GRTC.uuid())
-        }
+      var grtcID = GRTC.queryParameter(window.location.search);
+      if (grtcID.length == 0) {
+        var grtcID = GRTC.uuid();
+        window.history.pushState('', '', '?collaborate=' + grtcID);
+        var grtc = new GRTC(grtcID, true);
+      } else {
+        var grtc = new GRTC(grtcID, false);
+      }
     </script>
   </body>
 </html>

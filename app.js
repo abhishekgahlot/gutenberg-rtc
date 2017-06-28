@@ -14,7 +14,7 @@ class GRTC {
         this.peer = null;
         this.signal = null;
         this.joinee = joinee;
-        this.start();
+        this.init();
     }
 
     static queryParameter(queryString) {
@@ -23,26 +23,21 @@ class GRTC {
     }
 
     static uuid() {
-        return uuidv1()
+        return uuidv1();
     }
 
     peerHandler() {
-        this.peer.on('signal', (signal) => {
-            this.signal = signal;
-        });
-    }
-
-    start() {
-        let peerInterface = new Peer({ 
+        this.peer = new Peer({ 
             initiator: this.joinee === true,
             trickle: false
         });
-        this.peer = peerInterface;
-        this.peerHandler();
+        this.peer.on('signal', (receivedSignal) => {
+            this.signal = receivedSignal;
+        });
     }
 
-    send(data) {
-        this.peer.send(data);
+    init() {
+        this.peerHandler();
     }
 }
 
