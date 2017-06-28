@@ -2,6 +2,9 @@
 
 const Peer = require('simple-peer');
 const uuidv1 = require('uuid/v1');
+const uuidv4 = require('uuid/v4');
+
+const crypto = require('./crypto');
 
 class Signal {
     constructor() {
@@ -26,6 +29,10 @@ class GRTC {
         return uuidv1();
     }
 
+    static secret() {
+        return uuidv4();
+    }
+
     peerHandler() {
         this.peer = new Peer({ 
             initiator: this.joinee === true,
@@ -36,8 +43,25 @@ class GRTC {
         });
     }
 
+    securityHandler() {
+        return new Promise((resolve, reject) => {
+            crypto.generateKeys()
+            .then((keys) => {
+                this.publicKey = keys['publicKey'];
+                this.privateKey = keys['privateKey'];
+                resolve(true);
+            })
+            .catch(reject);
+        });
+    }
+
     init() {
         this.peerHandler();
+        this.securityHandler().then(() => {
+            console.log(this.publicKey, this.privateKey);
+        }).catch((e) => {
+
+        });
     }
 }
 
