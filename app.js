@@ -3,6 +3,7 @@
 const Peer = require('simple-peer');
 const uuidv1 = require('uuid/v1');
 const uuidv4 = require('uuid/v4');
+const EventEmitter = require('events').EventEmitter;
 
 const crypto = require('./crypto');
 
@@ -16,17 +17,19 @@ class Signal {
      * signalID is peer signal used to traverse and connect P2P.
      */
     constructor(url, grtcID, signalID) {
-        this.url = url;
-        this.grtcID = grtcID;
-        this.signalID = signalID;
+        let self = this;
+        self.url = url;
+        self.grtcID = grtcID;
+        self.signalID = signalID;
     }
 
     /**
      * getSignal is called periodically in order to fetch the updated signal.
      */
     getSignal() {
+        let self = this;
         return new Promise((resolve, reject) => {
-            $.get(this.url + '/get/' + this.grtcID, (resp) => {
+            $.get(self.url + '/get/' + self.grtcID, (resp) => {
                 resolve(resp);
             }).fail((e) => {
                 reject(e);
@@ -38,8 +41,9 @@ class Signal {
      * Updates the server route so that peers can get the data.
      */
     updateSignal() {
+        let self = this;
         return new Promise((resolve, reject) => {
-            $.get(this.url + '/set/' + this.grtcID + '/' + btoa(JSON.stringify(this.signalID)), (resp) => {
+            $.get(self.url + '/set/' + self.grtcID + '/' + btoa(JSON.stringify(self.signalID)), (resp) => {
                 resolve(resp);
             }).fail((e) => {
                 reject(e);
@@ -50,10 +54,10 @@ class Signal {
 
 
 /** 
- *  Main GRTC app
+ *  Main GRTC module
  */
 
-class GRTC {
+class GRTC extends EventEmitter {
     /**
      * @param {string} uuid 
      * @param {boolean} joinee 
@@ -61,17 +65,19 @@ class GRTC {
      * joinee is true if initiator else false
      */
 	constructor(grtcID, url, joinee) {
-        this.peer = null;
-        this.peerSignal = null;
-        this.signalInstance = null;
-        this.joinee = joinee;
-        this.url = url;
-        this.grtcID = grtcID;
-        this.init();
+        super();
+        let self = this;
+        self.peer = null;
+        self.peerSignal = null;
+        self.signalInstance = null;
+        self.joinee = joinee;
+        self.url = url;
+        self.grtcID = grtcID;
+        self.init();
     }
 
     /**
-     * returns the stripped out queryString that is used by peers.
+     * Returns the stripped out queryString that is used by peers.
      */
     static queryParameter(queryString) {
         let queryIndex = queryString.indexOf('collaborate');
@@ -100,12 +106,13 @@ class GRTC {
     }
 
     /**  
-     * listens for signals by initiator.
+     * Listens for signals by initiator.
      */
     listenSignal() {
+        let self = this;
         return new Promise((resolve, reject) => {
-            this.signalInstance.getSignal().then((resp) => {
-                console.log(resp, this.signalInstance);
+            self.signalInstance.getSignal().then((resp) => {
+                console.log(resp, self.signalInstance);
             });
         });
     }
@@ -116,12 +123,13 @@ class GRTC {
      * signal received is not present if initiator is false it waits for initiator signal.
      */
     peerHandler() {
+        let self = this;
         return new Promise((resolve, reject) => {
-            this.peer = new Peer({ 
-                initiator: this.joinee === true,
+            self.peer = new Peer({ 
+                initiator: self.joinee === true,
                 trickle: false
             });
-            this.peer.on('signal', (peerSignal) => {
+            self.peer.on('signal', (peerSignal) => {
                 resolve(peerSignal);
             });
         });
@@ -131,27 +139,27 @@ class GRTC {
      * Called by contructor and main entry point of app.
      */
     init() {
-
+        let self = this;
         /** 
          * if not initiator start listening for signals.
          */
-        if (this.joinee == false) {
-            this.signalInstance = new Signal(this.url, this.grtcID, null);
-            this.listenSignal();
+        if (self.joinee == false) {
+            self.signalInstance = new Signal(self.url, self.grtcID, null);
+            self.listenSignal();
         }
 
         /**
          * Will be resolve by initiator only.
          */
-        this.peerHandler().then((peerSignal) => {
-            this.signalInstance = new Signal(this.url, this.grtcID, peerSignal);
-            this.signalInstance.updateSignal();
+        self.peerHandler().then((peerSignal) => {
+            self.signalInstance = new Signal(self.url, self.grtcID, peerSignal);
+            self.signalInstance.updateSignal();
         });
 
         /**
          * Generate public/private key pair for sharing secret key to peers.
          */
-        this.securityHandler().then((keys) => {
+        self.securityHandler().then((keys) => {
             console.log(keys);
         }).catch((e) => {
 
