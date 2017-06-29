@@ -73,6 +73,7 @@ class GRTC extends EventEmitter {
         self.joinee = joinee;
         self.url = url;
         self.grtcID = grtcID;
+        self.otherPeers = new Set();
         self.init();
     }
 
@@ -112,7 +113,11 @@ class GRTC extends EventEmitter {
         let self = this;
         return new Promise((resolve, reject) => {
             self.signalInstance.getSignal().then((resp) => {
-                console.log(resp, self.signalInstance);
+                resp.forEach((element) => {
+                    if (element !== JSON.stringify(self.peerSignal)) {
+                        self.otherPeers.add(element);
+                    }
+                });
             });
         });
     }
@@ -130,7 +135,8 @@ class GRTC extends EventEmitter {
                 trickle: false
             });
             self.peer.on('signal', (peerSignal) => {
-                resolve(peerSignal);
+                self.peerSignal = peerSignal;
+                resolve();
             });
         });
     }
@@ -140,20 +146,22 @@ class GRTC extends EventEmitter {
      */
     init() {
         let self = this;
+
         /** 
          * if not initiator start listening for signals.
          */
         if (self.joinee == false) {
-            self.signalInstance = new Signal(self.url, self.grtcID, null);
+            self.signalInstance = new Signal(self.url, self.grtcID, self.peerSignal);
             self.listenSignal();
         }
 
         /**
-         * Will be resolve by initiator only.
+         * Will be resolved by initiator only.
          */
-        self.peerHandler().then((peerSignal) => {
-            self.signalInstance = new Signal(self.url, self.grtcID, peerSignal);
+        self.peerHandler().then(() => {
+            self.signalInstance = new Signal(self.url, self.grtcID, self.peerSignal);
             self.signalInstance.updateSignal();
+            self.listenSignal();
         });
 
         /**
