@@ -7,8 +7,26 @@ const uuidv4 = require('uuid/v4');
 const crypto = require('./crypto');
 
 class Signal {
-    constructor() {
-        
+    constructor(url, grtcID, signalID) {
+        this.url = url;
+        this.grtcID = grtcID;
+        this.signalID = signalID;
+    }
+
+    getSignal() {
+        return new Promise((resolve, reject) => {
+            
+        });
+    }
+
+    updateSignal() {
+        return new Promise((resolve, reject) => {
+            $.get(this.url + '/set/' + this.grtcID + '/' + this.signalID, (resp) => {
+                resolve(resp);
+            }).fail((e) => {
+                reject(e);
+            });
+        });
     }
 }
 

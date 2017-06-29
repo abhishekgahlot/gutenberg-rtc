@@ -1,5 +1,5 @@
 /*
-  These are dummy routes which stores data in memory for a key/value.
+  These are dummy routes which stores data in memory/file for a key/value.
  */
 
 const express = require('express');
@@ -18,14 +18,21 @@ app.get('/set/:key/:val', (req, res) => {
   let key = req.params.key;
   let val = req.params.val;
   let force = req.query.force;
-  
-  let dbValue = kv.get(key);
 
-  if (force || !dbValue) {
-    kv.put(key, val);
-    res.send(kv.get(key));
+  let set = new Set();
+  let keyValue = kv.get(key);
+
+  /*
+    if force query parameter or keyValue doesn't exist
+    Add value to new set and update the kv store.
+  */
+  if (force || !keyValue) {
+    set.add(val);
+    kv.put(key, set);
+    res.send([...kv.get(key)]);
   } else {
-    res.send(dbValue);
+    keyValue.add(val);
+    res.send([...keyValue]);
   }
 });
 
