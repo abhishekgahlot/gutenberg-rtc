@@ -16,28 +16,28 @@ app.get('/', (req, res) => {
 
 app.get('/set/:key/:val', (req, res) => {
   let key = req.params.key;
-  let val = req.params.val;
+  let val = new Buffer(req.params.val, 'base64').toString('ascii');
   let force = req.query.force;
 
-  let set = new Set();
-  let keyValue = kv.get(key);
+  let firstSet = new Set();
+  let keyValue = kv.getSet(key);
 
   /**
    * if force query parameter or keyValue doesn't exist
    * Add value to new set and update the kv store.
+   * else add to set you got and update kv.
    */
   if (force || !keyValue) {
-    set.add(val);
-    kv.put(key, set);
-    res.send([...kv.get(key)]);
+    firstSet.add(val);
+    res.send(kv.updateSet(key, firstSet));
   } else {
     keyValue.add(val);
-    res.send([...keyValue]);
+    res.send(kv.updateSet(key, keyValue));
   }
 });
 
 app.get('/get/:key', (req, res) => {
-  res.send(kv.get(req.params.key));
+  res.send(Array.from(kv.getSet(req.params.key)));
 });
 
 app.listen(3000, () => {

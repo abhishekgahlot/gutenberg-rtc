@@ -7,9 +7,9 @@
       if (grtcID.length == 0) {
         var grtcID = GRTC.uuid();
         window.history.pushState('', '', '?collaborate=' + grtcID);
-        var grtc = new GRTC(grtcID, true);
+        var grtc = new GRTC(grtcID, window.location.origin,  true);
       } else {
-        var grtc = new GRTC(grtcID, false);
+        var grtc = new GRTC(grtcID,window.location.origin, false);
       }
     </script>
   </body>

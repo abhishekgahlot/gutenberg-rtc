@@ -35,7 +35,7 @@ class Signal {
      */
     updateSignal() {
         return new Promise((resolve, reject) => {
-            $.get(this.url + '/set/' + this.grtcID + '/' + this.signalID, (resp) => {
+            $.get(this.url + '/set/' + this.grtcID + '/' + btoa(JSON.stringify(this.signalID)), (resp) => {
                 resolve(resp);
             }).fail((e) => {
                 reject(e);
@@ -51,10 +51,12 @@ class GRTC {
      * uuid is uniquely generated id for collaboration to happen
      * joinee is true if initiator else false
      */
-	constructor(uuid, joinee) {
+	constructor(grtcID, url, joinee) {
         this.peer = null;
-        this.signal = null;
+        this.peerSignal = null;
         this.joinee = joinee;
+        this.url = url;
+        this.grtcID = grtcID;
         this.init();
     }
 
@@ -91,8 +93,8 @@ class GRTC {
                 initiator: this.joinee === true,
                 trickle: false
             });
-            peer.on('signal', (receivedSignal) => {
-                resolve([peer, receivedSignal]);
+            peer.on('signal', (peerSignal) => {
+                resolve([peer, peerSignal]);
             });
         });
     }
@@ -108,9 +110,13 @@ class GRTC {
      * Called by contructor and main entry point of app.
      */
     init() {
-        this.peerHandler().then(([peer, signal]) => {
-            console.log(peer, signal);
+
+        this.peerHandler().then(([peer, peerSignal]) => {
+            let signal = new Signal(this.url, this.grtcID, peerSignal);
+            window.bat = signal;
+            console.log(signal);
         });
+
         this.securityHandler().then((keys) => {
             console.log(keys);
         }).catch((e) => {
