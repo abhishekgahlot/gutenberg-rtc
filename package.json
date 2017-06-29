@@ -5,8 +5,9 @@
   "main": "app.js",
   "scripts": {
     "start": "./node_modules/http-server/bin/http-server",
+    "server": "node server",
     "test": "./node_modules/mocha/bin/mocha tests/* --timeout 5000",
-    "build": "browserify app.js -o bundle.js -t [ babelify --presets [ es2015 react ] ]"
+    "build": "browserify app.js -o static/bundle.js -t [ babelify --presets [ es2015 react ] ]"
   },
   "author": "",
   "license": "ISC",
@@ -14,6 +15,7 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-react": "^6.24.1",
     "babelify": "^7.3.0",
+    "expressjs": "^1.0.1",
     "http-server": "^0.10.0",
     "mocha": "^3.4.2",
     "standard": "^10.0.2"
