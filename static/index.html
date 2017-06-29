@@ -1,6 +1,25 @@
 <html>
-  <body>
+  <head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"></link>
+  </head>
+  <body style="padding:60px;">
+    <div id="status" class="well" style="height:100px;overflow-y:scroll" ></div>
+    <div id="messages" class="well" style="height:200px;overflow-y:scroll" ></div>
+    <div class="row">
+      <div class="col-lg-6 col-md-6">
+      <div class="input-group">
+        <input type="text" class="form-control" id="msg" placeholder="Send Messages...">
+        <span class="input-group-btn">
+          <button class="btn btn-primary" id="btn" type="button">Send!</button>
+        </span>
+      </div>
+    </div>
+    <div class="col-lg-6 col-md-6"></div>
+  </div>
+
+    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script src="bundle.js"></script>
     <script>
       var grtcID = GRTC.queryParameter(window.location.search);
@@ -11,6 +30,18 @@
       } else {
         var grtc = new GRTC(grtcID,window.location.origin, false);
       }
+      grtc.on('peerFound', function(l) {
+        $("#status").append(l);
+        grtc.peer.signal(l);
+        grtc.peer.on('data', function(d){
+          $("#messages").append('<p>'+ d.toString() + '</p>');
+        })
+      });
+
+      $("#btn").click(function(){
+        grtc.peer.send($("#msg").val());
+        $("#msg").val("");
+      });
     </script>
   </body>
 </html>

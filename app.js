@@ -74,6 +74,7 @@ class GRTC extends EventEmitter {
         self.url = url;
         self.grtcID = grtcID;
         self.otherPeers = new Set();
+        self.listenSignalTimer = 0;
         self.init();
     }
 
@@ -98,6 +99,17 @@ class GRTC extends EventEmitter {
     static secret() {
         return uuidv4();
     }
+
+    /**
+     * Set difference API for calculating difference. Note: setA - setB != setB - setA
+     */
+    setDifference(setA, setB) {
+        let difference = new Set(setA);
+        for (let elem of setB) {
+            difference.delete(elem);
+        }
+        return difference;
+    }
     
     /**
      * Generates a public/private key pair with 1024 bit RSA.
@@ -111,13 +123,23 @@ class GRTC extends EventEmitter {
      */
     listenSignal() {
         let self = this;
-        return new Promise((resolve, reject) => {
-            self.signalInstance.getSignal().then((resp) => {
-                resp.forEach((element) => {
-                    if (element !== JSON.stringify(self.peerSignal)) {
-                        self.otherPeers.add(element);
-                    }
-                });
+        self.listenSignalRoutine();
+        self.listenSignalTimer = setInterval(() => {
+            self.listenSignalRoutine();
+        }, 5000);
+    }
+
+    /** 
+     * signal routine to continue in loop
+     */
+    listenSignalRoutine() {
+        let self = this;
+        self.signalInstance.getSignal().then((resp) => {
+            self.setDifference(new Set(resp), self.otherPeers).forEach((element) => {
+                if (element !== JSON.stringify(self.peerSignal)) {
+                    self.emit('peerFound', element);
+                    self.otherPeers.add(element);
+                }
             });
         });
     }
