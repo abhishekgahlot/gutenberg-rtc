@@ -26,7 +26,11 @@ class Signal {
      */
     getSignal() {
         return new Promise((resolve, reject) => {
-            
+            $.get(this.url + '/get/' + this.grtcID, (resp) => {
+                resolve(resp);
+            }).fail((e) => {
+                reject(e);
+            });
         });
     }
 
@@ -44,6 +48,11 @@ class Signal {
     }
 }
 
+
+/** 
+ *  Main GRTC app
+ */
+
 class GRTC {
     /**
      * @param {string} uuid 
@@ -54,6 +63,7 @@ class GRTC {
 	constructor(grtcID, url, joinee) {
         this.peer = null;
         this.peerSignal = null;
+        this.signalInstance = null;
         this.joinee = joinee;
         this.url = url;
         this.grtcID = grtcID;
@@ -81,6 +91,24 @@ class GRTC {
     static secret() {
         return uuidv4();
     }
+    
+    /**
+     * Generates a public/private key pair with 1024 bit RSA.
+     */
+    securityHandler() {
+        return crypto.generateKeys();
+    }
+
+    /**  
+     * listens for signals by initiator.
+     */
+    listenSignal() {
+        return new Promise((resolve, reject) => {
+            this.signalInstance.getSignal().then((resp) => {
+                console.log(resp, this.signalInstance);
+            });
+        });
+    }
 
     /**
      * peerHandler returns peer and signalReceived.
@@ -89,21 +117,14 @@ class GRTC {
      */
     peerHandler() {
         return new Promise((resolve, reject) => {
-            let peer = new Peer({ 
+            this.peer = new Peer({ 
                 initiator: this.joinee === true,
                 trickle: false
             });
-            peer.on('signal', (peerSignal) => {
-                resolve([peer, peerSignal]);
+            this.peer.on('signal', (peerSignal) => {
+                resolve(peerSignal);
             });
         });
-    }
-
-    /**
-     * Generates a public/private key pair with 1024 bit RSA.
-     */
-    securityHandler() {
-        return crypto.generateKeys();
     }
 
     /**
@@ -111,12 +132,25 @@ class GRTC {
      */
     init() {
 
-        this.peerHandler().then(([peer, peerSignal]) => {
-            let signal = new Signal(this.url, this.grtcID, peerSignal);
-            window.bat = signal;
-            console.log(signal);
+        /** 
+         * if not initiator start listening for signals.
+         */
+        if (this.joinee == false) {
+            this.signalInstance = new Signal(this.url, this.grtcID, null);
+            this.listenSignal();
+        }
+
+        /**
+         * Will be resolve by initiator only.
+         */
+        this.peerHandler().then((peerSignal) => {
+            this.signalInstance = new Signal(this.url, this.grtcID, peerSignal);
+            this.signalInstance.updateSignal();
         });
 
+        /**
+         * Generate public/private key pair for sharing secret key to peers.
+         */
         this.securityHandler().then((keys) => {
             console.log(keys);
         }).catch((e) => {
