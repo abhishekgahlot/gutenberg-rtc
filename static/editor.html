@@ -26,6 +26,7 @@
     <script src="bundle.js"></script>
     <script>
       var editor = ace.edit("editor");
+      editor.$blockScrolling = Infinity
       editor.setTheme("ace/theme/monokai");
       editor.getSession().setMode("ace/mode/javascript");
       var grtcID = GRTC.queryParameter(window.location.search);
@@ -36,23 +37,27 @@
       } else {
         var grtc = new GRTC(grtcID, window.location.origin, false);
       }
-
+      var inserting = false;
       grtc.on('transport', function(){
         console.log('secret acknowledged confirmed');
         editor.getSession().on('change', function(e) {
           window.x = e;
-          grtc.secureSend(e);
-          console.log('changed', e);
-        });
+          if(!inserting) {
+            grtc.secureSend(e);
+            console.log('changed', e);
+          }
+      });
       });
 
       grtc.on('peerConnected', function(l) {
-        
         grtc.on('peerEncryptedData', function(d){
           console.log(d);
         });
         grtc.on('peerSecureData', function(d){
-          console.log(d);
+          var y = JSON.parse(d);
+          inserting = true;
+          editor.getSession().getDocument().applyDeltas([y]);
+          inserting = false;
         });
       });
     </script>
