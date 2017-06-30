@@ -6,13 +6,25 @@ const crypto = {
     return new Promise((resolve, reject) => {
       // generate an RSA key pair asynchronously (uses web workers if available)
       // use workers: -1 to run a fast core estimator to optimize # of workers
-      rsa.generateKeyPair({bits: 2048, workers: 2}, (err, keypair) => {
+      rsa.generateKeyPair({bits: 1024, workers: 2}, (err, keypair) => {
         if (err) {
           return reject(err);
         }
-        resolve(keypair);
+
+        let newKeys = {
+          publicKey: forge.pki.publicKeyToPem(keypair.publicKey),
+          privateKey: forge.pki.privateKeyToPem(keypair.privateKey)
+        };
+
+        resolve(newKeys);
       });
     });
+  },
+  encrypt: (msg, pubKey) => {
+    return rsa.encrypt(msg, forge.pki.publicKeyFromPem(pubKey), true);
+  },
+  decrypt: (msg, priKey) => {
+    return rsa.decrypt(msg, forge.pki.privateKeyFromPem(priKey), false, false);
   }
 }
 
