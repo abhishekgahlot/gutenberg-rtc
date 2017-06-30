@@ -23,13 +23,37 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="bundle.js"></script>
     <script>
       var editor = ace.edit("editor");
       editor.setTheme("ace/theme/monokai");
       editor.getSession().setMode("ace/mode/javascript");
-      editor.getSession().on('change', function(e) {
-        window.x = e;
-        console.log('changed', e);
+      var grtcID = GRTC.queryParameter(window.location.search);
+      if (grtcID.length == 0) {
+        var grtcID = GRTC.uuid();
+        window.history.pushState('', '', '?collaborate=' + grtcID);
+        var grtc = new GRTC(grtcID, window.location.origin,  true);
+      } else {
+        var grtc = new GRTC(grtcID, window.location.origin, false);
+      }
+
+      grtc.on('transport', function(){
+        console.log('secret acknowledged confirmed');
+        editor.getSession().on('change', function(e) {
+          window.x = e;
+          grtc.secureSend(e);
+          console.log('changed', e);
+        });
+      });
+
+      grtc.on('peerConnected', function(l) {
+        
+        grtc.on('peerEncryptedData', function(d){
+          console.log(d);
+        });
+        grtc.on('peerSecureData', function(d){
+          console.log(d);
+        });
       });
     </script>
   </body>

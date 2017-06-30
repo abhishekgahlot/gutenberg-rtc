@@ -329,7 +329,7 @@ class GRTC extends EventEmitter {
          * Create new send API
          */
         self.secureSend = function(data) {
-            let newData = self.transportLayer.encrypt(data);
+            let newData = self.transportLayer.encrypt(JSON.stringify(data));
             self.send(newData);
         }
 
