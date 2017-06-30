@@ -91,6 +91,7 @@ class GRTC extends EventEmitter {
         self.otherPeers = new Set();
         self.listenSignalTimer = 0;
         self.listenSignalCount = 0;
+        self.keys = [];
         self.init();
     }
 
@@ -127,12 +128,6 @@ class GRTC extends EventEmitter {
         return difference;
     }
     
-    /**
-     * Generates a public/private key pair with 1024 bit RSA.
-     */
-    securityHandler() {
-        return crypto.generateKeys();
-    }
 
     /**  
      * Listens for signals by initiator.
@@ -152,13 +147,25 @@ class GRTC extends EventEmitter {
     listenSignalRoutine() {
         let self = this;
         self.signalInstance.getSignal().then((resp) => {
-            self.setDifference(new Set(resp), self.otherPeers).forEach((element) => {
-                if (element !== JSON.stringify(self.peerSignal)) {
-                    self.emit('peerFound', element);
-                    self.otherPeers.add(element);
+            self.setDifference(new Set(resp), self.otherPeers).forEach((signal) => {
+                if (signal !== JSON.stringify(self.peerSignal)) {
+                    self.emit('peerFound', signal);
+                    self.otherPeers.add(signal);
                 }
             });
         });
+    }
+
+    /**
+     * Data handler for received data.
+     */
+    dataHandler(data) {
+        let parsedData = JSON.parse(data.toString());
+        if ('publicKey' in parsedData) {
+            self.emit('peerpublicKey', parsedData['publicKey']);
+        } else {
+            self.emit('peerData', parsedData);
+        }
     }
 
     /**
@@ -173,12 +180,53 @@ class GRTC extends EventEmitter {
                 initiator: self.joinee === true,
                 trickle: false
             });
+
             self.peer.on('signal', (peerSignal) => {
                 self.peerSignal = peerSignal;
                 resolve();
             });
+
+            self.on('peerFound', (signal) => {
+                self.peer.signal(signal);
+            });
+
+            self.peer.on('signal', (data) => {
+                self.emit('peerSignal', data);
+            });
+
+            self.peer.on('connect', () => {
+                self.emit('peerConnected');
+            });
+        
+            self.peer.on('data', (data) => {
+                self.dataHandler(data);
+            });
+
+            self.send = function(data) {
+                self.peer.send(data);
+            }
         });
     }
+
+    /**
+     * Generates a public/private key pair with 1024 bit RSA.
+     * Send public key to other peers.
+     */
+    securityHandler() {
+        let self = this;
+        return new Promise((resolve, reject) => {
+            self.on('peerFound', () => {
+                crypto.generateKeys().then((keys) => {
+                    self.keys = keys;
+                    let payload = {
+                        publicKey: keys['publicKey']
+                    }
+                    self.peer.send(JSON.stringify(payload));
+                });
+            });
+        });
+    }
+
 
     /**
      * Called by contructor and main entry point of app.
@@ -199,24 +247,10 @@ class GRTC extends EventEmitter {
          */
         self.peerHandler().then(() => {
             self.signalInstance = new Signal(self.url, self.grtcID, self.peerSignal);
-            if (self.reload) {
-                self.signalInstance.clearSignal().then(() => {
-                    self.listenSignal();
-                });
-            } else {
-                self.signalInstance.updateSignal().then(() => {
-                    self.listenSignal();
-                })
-            }
-        });
-
-        /**
-         * Generate public/private key pair for sharing secret key to peers.
-         */
-        self.securityHandler().then((keys) => {
-            console.log(keys);
-        }).catch((e) => {
-
+            self.signalInstance.updateSignal().then(() => {
+                self.listenSignal();
+                self.securityHandler();
+            })
         });
     }
 }

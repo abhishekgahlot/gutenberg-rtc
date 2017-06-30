@@ -3,7 +3,9 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"></link>
   </head>
   <body style="padding:60px;">
-    <div id="status" class="well" style="height:100px;overflow-y:scroll" ></div>
+    <div id="status" class="" style="height:100px;overflow-y:scroll" >
+
+    </div>
     <div id="messages" class="well" style="height:200px;overflow-y:scroll" ></div>
     <div class="row">
       <div class="col-lg-6 col-md-6">
@@ -25,23 +27,24 @@
       var grtcID = GRTC.queryParameter(window.location.search);
       if (grtcID.length == 0) {
         var grtcID = GRTC.uuid();
-        window.history.pushState('', '', '?collaborate=' + grtcID + '#main');
+        window.history.pushState('', '', '?collaborate=' + grtcID);
         var grtc = new GRTC(grtcID, window.location.origin,  true);
-      } else if (window.location.hash.substr(1) == 'main'){
-        var grtc = new GRTC(grtcID, window.location.origin,  true, true);
       } else {
-        var grtc = new GRTC(grtcID,window.location.origin, false);
+        var grtc = new GRTC(grtcID, window.location.origin, false);
       }
-      grtc.on('peerFound', function(l) {
-        $("#status").append(l);
-        grtc.peer.signal(l);
-        grtc.peer.on('data', function(d){
+
+      grtc.on('peerConnected', function(l) {
+        grtc.on('peerData', function(d){
           $("#messages").append('<p>'+ d.toString() + '</p>');
         })
       });
 
+      grtc.on('peerSignal', function(data) {
+        $("#status").append('<h3>Signal</h3><pre>'+JSON.stringify(data)+'</pre>');
+      })
+
       $("#btn").click(function(){
-        grtc.peer.send($("#msg").val());
+        grtc.send($("#msg").val());
         $("#messages").append('<p>'+ $("#msg").val() + '</p>');
         $("#msg").val("");
       });
