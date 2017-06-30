@@ -158,11 +158,13 @@ class GRTC extends EventEmitter {
 
     /**
      * Data handler for received data.
+     * Monitors data received, publicKey and sharedkey for authentication.
      */
     dataHandler(data) {
+        let self = this;
         let parsedData = JSON.parse(data.toString());
         if ('publicKey' in parsedData) {
-            self.emit('peerpublicKey', parsedData['publicKey']);
+            self.emit('publicKey', parsedData['publicKey']);
         } else {
             self.emit('peerData', parsedData);
         }
@@ -203,7 +205,7 @@ class GRTC extends EventEmitter {
             });
 
             self.send = function(data) {
-                self.peer.send(data);
+                self.peer.send(JSON.stringify(data));
             }
         });
     }
@@ -223,6 +225,9 @@ class GRTC extends EventEmitter {
                     }
                     self.peer.send(JSON.stringify(payload));
                 });
+            });
+            self.on('publicKey', (publicKey) => {
+                
             });
         });
     }
