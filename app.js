@@ -24,6 +24,15 @@ class Signal {
     }
 
     /**
+     * Clear the key forcefully in kv.
+     */
+    static clearSignal(key) {
+        return new Promise((resolve, reject) => {
+
+        });
+    }
+
+    /**
      * getSignal is called periodically in order to fetch the updated signal.
      */
     getSignal() {
@@ -75,6 +84,7 @@ class GRTC extends EventEmitter {
         self.grtcID = grtcID;
         self.otherPeers = new Set();
         self.listenSignalTimer = 0;
+        self.listenSignalCount = 0;
         self.init();
     }
 
@@ -125,6 +135,7 @@ class GRTC extends EventEmitter {
         let self = this;
         self.listenSignalRoutine();
         self.listenSignalTimer = setInterval(() => {
+            self.listenSignalCount++;
             self.listenSignalRoutine();
         }, 5000);
     }

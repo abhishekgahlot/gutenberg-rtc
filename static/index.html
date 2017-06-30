@@ -25,7 +25,9 @@
       var grtcID = GRTC.queryParameter(window.location.search);
       if (grtcID.length == 0) {
         var grtcID = GRTC.uuid();
-        window.history.pushState('', '', '?collaborate=' + grtcID);
+        window.history.pushState('', '', '?collaborate=' + grtcID + '#main=true');
+        var grtc = new GRTC(grtcID, window.location.origin,  true);
+      } else if (window.location.hash.substr(1) == 'main'){
         var grtc = new GRTC(grtcID, window.location.origin,  true);
       } else {
         var grtc = new GRTC(grtcID,window.location.origin, false);
