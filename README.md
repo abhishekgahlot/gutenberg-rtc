@@ -75,7 +75,7 @@ grtc.on('peerConnected', function(){
 * when data is received. 
 ```
 grtc.on('peerData', function(data){
-  //data is always json object which is stringified
+  //data is always json stringified
 });
 ```
 
@@ -84,7 +84,7 @@ grtc.on('peerData', function(data){
 * when other peer publicKey is fetched. 
 ```
 grtc.on('publicKey', function(pubKey){
-  //pubKey => encrypt shared token using and send to that peer.
+  //pubKey => encrypt shared token using this and send that to peer.
 });
 ```
 
