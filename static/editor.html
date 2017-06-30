@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.0.0/css/bootstrap.min.css"></link>
+    <style>
+      #editor {
+        height: 300px;
+      }
+    </style>
+  </head>
+  <body style="padding:60px;">
+    <div class="container">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Editor</h3>
+            </div>
+            <div class="panel-body">
+              <div id="editor">function foo(items) {
+                  var x = "All this is syntax highlighted";
+                  return x;
+              }</div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+      var editor = ace.edit("editor");
+      editor.setTheme("ace/theme/monokai");
+      editor.getSession().setMode("ace/mode/javascript");
+      editor.getSession().on('change', function(e) {
+        window.x = e;
+        console.log('changed', e);
+      });
+    </script>
+  </body>
+</html>

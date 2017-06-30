@@ -14,6 +14,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname + '/index.html'));
 });
 
+app.get('/editor', (req, res) => {
+  res.sendFile(path.join(__dirname + '/static/editor.html'));
+});
+
 app.get('/set/:key/:val', (req, res) => {
   let key = req.params.key;
   let val = new Buffer(req.params.val, 'base64').toString('ascii');

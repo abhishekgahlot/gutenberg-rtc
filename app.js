@@ -128,7 +128,7 @@ class GRTC extends EventEmitter {
      * uuid is uniquely generated id for collaboration to happen
      * joinee is true if initiator else false
      */
-	constructor(grtcID, url, joinee, reload) {
+    constructor(grtcID, url, joinee, reload) {
         super();
         let self = this;
         self.peer = null;
