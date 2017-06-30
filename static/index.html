@@ -25,10 +25,10 @@
       var grtcID = GRTC.queryParameter(window.location.search);
       if (grtcID.length == 0) {
         var grtcID = GRTC.uuid();
-        window.history.pushState('', '', '?collaborate=' + grtcID + '#main=true');
+        window.history.pushState('', '', '?collaborate=' + grtcID + '#main');
         var grtc = new GRTC(grtcID, window.location.origin,  true);
       } else if (window.location.hash.substr(1) == 'main'){
-        var grtc = new GRTC(grtcID, window.location.origin,  true);
+        var grtc = new GRTC(grtcID, window.location.origin,  true, true);
       } else {
         var grtc = new GRTC(grtcID,window.location.origin, false);
       }
@@ -42,6 +42,7 @@
 
       $("#btn").click(function(){
         grtc.peer.send($("#msg").val());
+        $("#messages").append('<p>'+ $("#msg").val() + '</p>');
         $("#msg").val("");
       });
     </script>

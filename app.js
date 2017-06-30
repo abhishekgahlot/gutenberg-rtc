@@ -26,9 +26,14 @@ class Signal {
     /**
      * Clear the key forcefully in kv.
      */
-    static clearSignal(key) {
+    clearSignal() {
+        let self = this;
         return new Promise((resolve, reject) => {
-
+            $.get(self.url + '/set/' + self.grtcID + '/' + btoa(JSON.stringify(self.signalID)) + '?force=true', (resp) => {
+                resolve(resp);
+            }).fail((e) => {
+                reject(e);
+            });
         });
     }
 
@@ -73,13 +78,14 @@ class GRTC extends EventEmitter {
      * uuid is uniquely generated id for collaboration to happen
      * joinee is true if initiator else false
      */
-	constructor(grtcID, url, joinee) {
+	constructor(grtcID, url, joinee, reload) {
         super();
         let self = this;
         self.peer = null;
         self.peerSignal = null;
         self.signalInstance = null;
         self.joinee = joinee;
+        self.reload = reload;
         self.url = url;
         self.grtcID = grtcID;
         self.otherPeers = new Set();
@@ -193,8 +199,15 @@ class GRTC extends EventEmitter {
          */
         self.peerHandler().then(() => {
             self.signalInstance = new Signal(self.url, self.grtcID, self.peerSignal);
-            self.signalInstance.updateSignal();
-            self.listenSignal();
+            if (self.reload) {
+                self.signalInstance.clearSignal().then(() => {
+                    self.listenSignal();
+                });
+            } else {
+                self.signalInstance.updateSignal().then(() => {
+                    self.listenSignal();
+                })
+            }
         });
 
         /**
