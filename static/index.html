@@ -35,8 +35,14 @@
 
       grtc.on('peerConnected', function(l) {
         grtc.on('peerData', function(d){
-          $("#messages").append('<p>'+ d.toString() + '</p>');
-        })
+          $("#messages").append('<p>'+ JSON.stringify(d) + '</p>');
+        });
+        grtc.on('peerEncryptedData', function(d){
+          $("#messages").append('<p> Encrypted Data Received: '+ JSON.stringify(d) + '</p>');
+        });
+         grtc.on('peerSecureData', function(d){
+          $("#messages").append('<p> Decrypted Data: '+ JSON.stringify(d) + '</p>');
+        });
       });
 
       grtc.on('peerSignal', function(data) {
@@ -62,7 +68,7 @@
       })
 
       $("#btn").click(function(){
-        grtc.send($("#msg").val());
+        grtc.secureSend($("#msg").val());
         $("#messages").append('<p>'+ $("#msg").val() + '</p>');
         $("#msg").val("");
       });

@@ -2,6 +2,7 @@ const forge = require('node-forge');
 const rsa = forge.pki.rsa;
 
 const crypto = {
+  forge,
   generateKeys: () => {
     return new Promise((resolve, reject) => {
       // generate an RSA key pair asynchronously (uses web workers if available)
