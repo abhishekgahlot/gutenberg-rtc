@@ -88,6 +88,30 @@ grtc.on('publicKey', function(pubKey){
 });
 ```
 
+* 'peerSecret'
+* when you received secret encrypted using your public key 
+```
+grtc.on('peerSecret', function(secret){
+  //secret => its decrypted using your private key.
+});
+```
+
+* 'secretAck'
+* this is ack when peer reply to initiator that secret is received.
+```
+grtc.on('secretAck', function(){
+  
+});
+```
+
+* 'transport'
+* this is emitted on both initiator and peers that transport layer is ready to use.
+```
+grtc.on('transport', function(){
+  // you can call grtc.secureSend('something') function
+});
+```
+
 
 ## Data Format
 
