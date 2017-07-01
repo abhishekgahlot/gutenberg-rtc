@@ -128,7 +128,7 @@ class GRTC extends EventEmitter {
      * uuid is uniquely generated id for collaboration to happen
      * joinee is true if initiator else false
      */
-    constructor(grtcID, url, joinee, reload) {
+    constructor(grtcID, url, joinee, reload, useTransport) {
         super();
         let self = this;
         self.peer = null;
@@ -142,6 +142,7 @@ class GRTC extends EventEmitter {
         self.listenSignalTimer = 0;
         self.listenSignalCount = 0;
         self.keys = [];
+        self.useTransport = useTransport;
         self.init();
     }
 
@@ -370,8 +371,14 @@ class GRTC extends EventEmitter {
             })
         });
 
-        self.securityHandler();
-        self.on('transport', self.startTransportLayer);
+        /**
+         * Use transport layer for more security.
+         * Default is false.
+         */
+        if (self.useTransport) {
+            self.securityHandler();
+            self.on('transport', self.startTransportLayer);
+        }
     }
 }
 

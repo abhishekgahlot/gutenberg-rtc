@@ -53,7 +53,8 @@
         grtc.on('peerEncryptedData', function(d){
           console.log(d);
         });
-        grtc.on('peerSecureData', function(d){
+        grtc.on('peerData', function(d){
+          console.log(d);
           var y = JSON.parse(d);
           inserting = true;
           editor.getSession().getDocument().applyDeltas([y]);
