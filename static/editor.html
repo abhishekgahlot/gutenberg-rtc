@@ -38,12 +38,12 @@
         var grtc = new GRTC(grtcID, window.location.origin, false);
       }
       var inserting = false;
-      grtc.on('transport', function(){
+      grtc.on('peerConnected', function(){
         console.log('secret acknowledged confirmed');
         editor.getSession().on('change', function(e) {
           window.x = e;
           if(!inserting) {
-            grtc.secureSend(e);
+            grtc.send(e);
             console.log('changed', e);
           }
       });
@@ -55,9 +55,8 @@
         });
         grtc.on('peerData', function(d){
           console.log(d);
-          var y = JSON.parse(d);
           inserting = true;
-          editor.getSession().getDocument().applyDeltas([y]);
+          editor.getSession().getDocument().applyDeltas([d]);
           inserting = false;
         });
       });

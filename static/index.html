@@ -28,47 +28,33 @@
       if (grtcID.length == 0) {
         var grtcID = GRTC.uuid();
         window.history.pushState('', '', '?collaborate=' + grtcID);
-        var grtc = new GRTC(grtcID, window.location.origin,  true);
+        var grtc = new GRTC(grtcID, window.location.origin);
       } else {
-        var grtc = new GRTC(grtcID, window.location.origin, false);
+        var grtc = new GRTC(grtcID, window.location.origin);
       }
 
-      grtc.on('peerConnected', function(l) {
-        grtc.on('peerData', function(d){
-          $("#messages").append('<p>'+ JSON.stringify(d) + '</p>');
-        });
-        grtc.on('peerEncryptedData', function(d){
-          $("#messages").append('<p> Encrypted Data Received: '+ JSON.stringify(d) + '</p>');
-        });
-         grtc.on('peerSecureData', function(d){
-          $("#messages").append('<p> Decrypted Data: '+ JSON.stringify(d) + '</p>');
-        });
+      grtc.on('initiator', function(){
+        console.log('Initiator progress is done');
       });
 
-      grtc.on('peerSignal', function(data) {
-        $("#status").append('<h3>Signal</h3><pre>'+JSON.stringify(data)+'</pre>');
+      grtc.on('peerFound', function(peer) {
+        console.log('Peer found: ', peer);
       });
 
-      grtc.on('publicKey', function(key) {
-        window.key = key;
-        $("#messages").append('<p>PublicKey: '+JSON.stringify(key)+'</p>');
+      grtc.on('peerSignal', function(){
+        console.log('Signal to peer done');
       });
 
-      grtc.on('peerSecret', function(key) {
-        window.key = key;
-        $("#messages").append('<p>Secret Received: '+(key)+'</p>');
+      grtc.on('peerConnected', function(){
+        console.log('Connection established between peers');
       });
 
-      grtc.on('secretAck', function(){
-        console.log('secret acknowledged');
-      })
-
-      grtc.on('startSession', function(){
-        console.log('secret acknowledged confirmed');
-      })
+      grtc.on('peerData', function(d){
+        $("#messages").append('<p>'+ JSON.stringify(d) + '</p>');
+      });
 
       $("#btn").click(function(){
-        grtc.secureSend($("#msg").val());
+        grtc.send($("#msg").val());
         $("#messages").append('<p>'+ $("#msg").val() + '</p>');
         $("#msg").val("");
       });

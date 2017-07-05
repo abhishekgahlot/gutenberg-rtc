@@ -7,19 +7,26 @@ const EventEmitter = require('events').EventEmitter;
 
 const crypto = require('./crypto');
 
+/**
+ * Signal class that uses promise not event emitters and can be used standalone.
+ * getSignal and updateSignal lets you update and fetch data regarding the shared key.
+ */
 class Signal {
     /**
      * @param {string} url 
      * @param {string} grtcID 
+     * @param {string} peerID
      * @param {object} signalID 
      * url is base url of page.
      * grtcID is collaborate param from url.
+     * paramID is changing peerID on refresh or every new grtc instance.
      * signalID is peer signal used to traverse and connect P2P.
      */
-    constructor(url, grtcID, signalID) {
+    constructor(url, grtcID, peerID, signalID) {
         let self = this;
         self.url = url;
         self.grtcID = grtcID;
+        self.peerID = peerID;
         self.signalID = signalID;
     }
 
@@ -57,7 +64,12 @@ class Signal {
     updateSignal() {
         let self = this;
         return new Promise((resolve, reject) => {
-            $.get(self.url + '/set/' + self.grtcID + '/' + btoa(JSON.stringify(self.signalID)), (resp) => {
+            let data = {
+                peerID: self.peerID,
+                signal: self.signalID,
+                type: 'register'
+            };
+            $.get(self.url + '/set/' + self.grtcID + '/' + btoa(JSON.stringify(data)), (resp) => {
                 resolve(resp);
             }).fail((e) => {
                 reject(e);
@@ -124,20 +136,17 @@ class TransportLayer {
 class GRTC extends EventEmitter {
     /**
      * @param {string} uuid 
-     * @param {boolean} joinee 
      * uuid is uniquely generated id for collaboration to happen
-     * joinee is true if initiator else false
      */
-    constructor(grtcID, url, joinee, reload, useTransport) {
+    constructor(grtcID, url, useTransport) {
         super();
         let self = this;
         self.peer = null;
         self.peerSignal = null;
         self.signalInstance = null;
-        self.joinee = joinee;
-        self.reload = reload;
         self.url = url;
         self.grtcID = grtcID;
+        self.peerID = GRTC.uuid();
         self.otherPeers = new Set();
         self.listenSignalTimer = 0;
         self.listenSignalCount = 0;
@@ -179,8 +188,21 @@ class GRTC extends EventEmitter {
         return difference;
     }
 
+    /**
+     * Check if you are initiator or not.
+     */
+    isInitiator() {
+        let self = this;
+        let data = { peerID: self.peerID, type: 'initial' };
+        $.get(self.url + '/set/' + self.grtcID + '/' + btoa(JSON.stringify(data)), (resp) => {
+            self.emit('initiator', resp);
+        }).fail((e) => {
+            self.emit('initiator', false);
+        });
+    }
+
     /**  
-     * Listens for signals by initiator.
+     * Listens for signals after finding initiator.
      */
     listenSignal() {
         let self = this;
@@ -188,7 +210,7 @@ class GRTC extends EventEmitter {
         self.listenSignalTimer = setInterval(() => {
             self.listenSignalCount++;
             self.listenSignalRoutine();
-        }, 5000);
+        }, 3000);
     }
 
     /** 
@@ -197,10 +219,10 @@ class GRTC extends EventEmitter {
     listenSignalRoutine() {
         let self = this;
         self.signalInstance.getSignal().then((resp) => {
-            self.setDifference(new Set(resp), self.otherPeers).forEach((signal) => {
-                if (signal !== JSON.stringify(self.peerSignal)) {
-                    self.emit('peerFound', signal);
-                    self.otherPeers.add(signal);
+            resp.forEach((peer) => {
+                if (peer.peerID !== self.peerID && !self.otherPeers.has(peer.peerID)) {
+                    self.emit('peerFound', peer);
+                    self.otherPeers.add(peer.peerID);
                 }
             });
         });
@@ -231,6 +253,8 @@ class GRTC extends EventEmitter {
             self.send({'secretAckConfirmed': true});
         } else if ('secretAckConfirmed' in parsedData) {
             self.emit('transport');
+        } else {
+            self.emit('peerData', parsedData);
         }
     }
 
@@ -243,7 +267,7 @@ class GRTC extends EventEmitter {
         let self = this;
         return new Promise((resolve, reject) => {
             self.peer = new Peer({ 
-                initiator: self.joinee === true,
+                initiator: self.initiator === true,
                 trickle: false
             });
 
@@ -252,8 +276,8 @@ class GRTC extends EventEmitter {
                 resolve();
             });
 
-            self.on('peerFound', (signal) => {
-                self.peer.signal(signal);
+            self.on('peerFound', (peer) => {
+                self.peer.signal(peer.signal);
             });
 
             self.peer.on('signal', (data) => {
@@ -293,7 +317,7 @@ class GRTC extends EventEmitter {
                     /**
                      * Send public key to initiator only.
                      */
-                    if (self.joinee == false) {
+                    if (self.initiator == false) {
                         self.send(payload);
                     }
                 });
@@ -324,16 +348,19 @@ class GRTC extends EventEmitter {
      */
     startTransportLayer() {
         let self = this;
-        console.log('starting transport layer', self.sharedSecret);
         self.transportLayer = new TransportLayer(self.sharedSecret);
+
         /**
-         * Create new send API
+         * Create new send API.
          */
         self.secureSend = function(data) {
             let newData = self.transportLayer.encrypt(JSON.stringify(data));
             self.send(newData);
         }
 
+        /**
+         * Listen of data received which is encrypted.
+         */
         self.on('peerEncryptedData', (encrypted) => {
             let decryptedData = self.transportLayer.decrypt(encrypted);
             self.emit('peerSecureData', decryptedData);
@@ -345,40 +372,44 @@ class GRTC extends EventEmitter {
      */
     init() {
         let self = this;
+        self.isInitiator();
 
         /**
-         * Shared secret is generated by initiator and passed to others.
+         * Server decides if you get to initiate or not.
+         * Because of persistance independent of peers.
          */
-        if (self.joinee) {
-            self.sharedSecret = GRTC.secret();
-        }
-
-        /** 
-         * if not initiator start listening for signals.
-         */
-        if (self.joinee == false) {
-            self.signalInstance = new Signal(self.url, self.grtcID, self.peerSignal);
-            self.listenSignal();
-        }
-
-        /**
-         * Will be resolved by initiator only.
-         */
-        self.peerHandler().then(() => {
-            self.signalInstance = new Signal(self.url, self.grtcID, self.peerSignal);
-            self.signalInstance.updateSignal().then(() => {
+        self.on('initiator', (resp) => {
+            /**
+             * Shared secret is generated by initiator and passed to others.
+             * else if not initiator start listening for signals.
+             */
+            self.initiator = resp.initiator;
+            if (self.initiator) {
+                self.sharedSecret = GRTC.secret();
+            } else {
+                self.signalInstance = new Signal(self.url, self.grtcID, self.peerID, self.peerSignal);
                 self.listenSignal();
-            })
+            }
+
+            /**
+             * Will be resolved after initiator is set only.
+             */
+            self.peerHandler().then(() => {
+                self.signalInstance = new Signal(self.url, self.grtcID, self.peerID, self.peerSignal);
+                self.signalInstance.updateSignal().then((data) => {
+                    self.listenSignal();
+                });
+            });
         });
 
-        /**
-         * Use transport layer for more security.
-         * Default is false.
-         */
-        if (self.useTransport) {
-            self.securityHandler();
-            self.on('transport', self.startTransportLayer);
-        }
+        // /**
+        //  * Use transport layer for more security.
+        //  * Default is false.
+        //  */
+        // if (self.useTransport) {
+        //     self.securityHandler();
+        //     self.on('transport', self.startTransportLayer);
+        // }
     }
 }
 

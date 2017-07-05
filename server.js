@@ -18,30 +18,73 @@ app.get('/editor', (req, res) => {
   res.sendFile(path.join(__dirname + '/static/editor.html'));
 });
 
+app.get('/tinymce', (req, res) => {
+  res.sendFile(path.join(__dirname + '/static/tinymce.html'));
+});
+
 app.get('/set/:key/:val', (req, res) => {
   let key = req.params.key;
-  let val = new Buffer(req.params.val, 'base64').toString('ascii');
+  let val = [];
+  try {
+    val = JSON.parse(new Buffer(req.params.val, 'base64').toString('ascii'));
+  } catch(e) {}
+
   let force = req.query.force;
-
-  let firstSet = new Set();
-  let keyValue = kv.getSet(key);
-
+  let peerID = val.peerID;
+  let type = val.type;
+  let store = kv.get(key) || [];
+  
   /**
-   * if force query parameter or keyValue doesn't exist
-   * Add value to new set and update the kv store.
-   * else add to set you got and update kv.
+   * If key doesn't exist and its initial request return initiator.
    */
-  if (force || !keyValue) {
-    firstSet.add(val);
-    res.send(kv.updateSet(key, firstSet));
-  } else {
-    keyValue.add(val);
-    res.send(kv.updateSet(key, keyValue));
+  if (!store.length && type === 'initial') {
+    let data = {
+      peerID,
+      type,
+      initiator: true
+    }
+    kv.put(key, [data]);
+    res.send(data);
+  } else if (store.length && type === 'initial') {
+    let exists = false;
+    store.forEach((peer) => {
+      if (peer.peerID == peerID) {
+        res.send(peer);
+        exists = true;
+      }
+    });
+
+    if (exists) { return; }
+
+    let data = {
+      peerID,
+      type,
+      initiator: false
+    }
+
+    kv.get(key).push(data);
+    kv.put(key, kv.get(key));
+    res.send(data);
+  } else if (type === 'register') {
+    store.forEach((peer) => {
+      if (peer.peerID === peerID) {
+        peer.signal = val.signal;
+      }
+    });
+    kv.put(key, kv.get(key));
+    res.send(kv.get(key));
   }
 });
 
+app.get('/remove/:key', (req, res) => {
+  let key = req.params.key;
+  let store = kv.get(key);
+  kv.put(key, []);
+  res.send(kv.get(key));
+});
+
 app.get('/get/:key', (req, res) => {
-  res.send(Array.from(kv.getSet(req.params.key)));
+  res.send(kv.get(req.params.key));
 });
 
 app.listen(3000, () => {
