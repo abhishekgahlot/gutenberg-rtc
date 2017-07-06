@@ -424,11 +424,4 @@ class GRTC extends EventEmitter {
     }
 }
 
-/**
- * If webrtc is not supported by browser make grtc null.
- */
-if (Peer.WEBRTC_SUPPORT) {
-    global.GRTC = GRTC;
-} else {
-    global.GRTC = null;
-}
+module.exports = { GRTC };
