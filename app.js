@@ -36,7 +36,8 @@ class Signal {
     clearSignal() {
         let self = this;
         return new Promise((resolve, reject) => {
-            $.get(self.url + '/set/' + self.grtcID + '/' + btoa(JSON.stringify(self.signalID)) + '?force=true', (resp) => {
+            let data = { peerID: self.peerID, type: 'initial', signal: self.signalID };
+            $.get(self.url + '/remove/' + self.grtcID + '/' + btoa(JSON.stringify(data)), (resp) => {
                 resolve(resp);
             }).fail((e) => {
                 reject(e);
@@ -77,6 +78,7 @@ class Signal {
         });
     }
 }
+
 
 /**
  * TransportLayer use a single key and provide the abstractions
@@ -220,9 +222,9 @@ class GRTC extends EventEmitter {
         let self = this;
         self.signalInstance.getSignal().then((resp) => {
             resp.forEach((peer) => {
-                if (peer.peerID !== self.peerID && !self.otherPeers.has(peer.peerID)) {
-                    self.emit('peerFound', peer);
+                if (peer.peerID !== self.peerID && !self.otherPeers.has(peer.peerID) && peer.signal) {
                     self.otherPeers.add(peer.peerID);
+                    self.emit('peerFound', peer);
                 }
             });
         });
@@ -273,7 +275,7 @@ class GRTC extends EventEmitter {
 
             self.peer.on('signal', (peerSignal) => {
                 self.peerSignal = peerSignal;
-                resolve();
+                resolve(); 
             });
 
             self.on('peerFound', (peer) => {
@@ -292,6 +294,15 @@ class GRTC extends EventEmitter {
                 self.dataHandler(data);
             });
 
+            self.peer.on('close', (peer) => {
+                self.emit('peerClosed', peer);
+                clearInterval(self.listenSignalTimer);
+                self.signalInstance.clearSignal().then(() => {
+                    self.removeAllListeners();
+                    self.init();
+                });
+            });
+
             /**
              * Override peer send to automatically convert json.
              */
@@ -307,39 +318,37 @@ class GRTC extends EventEmitter {
      */
     securityHandler() {
         let self = this;
-        return new Promise((resolve, reject) => {
-            self.on('peerConnected', () => {
-                crypto.generateKeys().then((keys) => {
-                    self.keys = keys;
-                    let payload = {
-                        publicKey: keys['publicKey']
-                    }
-                    /**
-                     * Send public key to initiator only.
-                     */
-                    if (self.initiator == false) {
-                        self.send(payload);
-                    }
-                });
+        self.on('peerConnected', () => {
+            crypto.generateKeys().then((keys) => {
+                self.keys = keys;
+                let payload = {
+                    publicKey: keys['publicKey']
+                }
+                /**
+                 * Send public key to initiator only.
+                 */
+                if (self.initiator == false) {
+                    self.send(payload);
+                }
             });
+        });
 
-            /**
-             * Listened on intiator.
-             */
-            self.on('publicKey', (publicKey) => {
-                let encryptedKey = { 'secret': crypto.encrypt(self.sharedSecret, publicKey) };
-                self.send(encryptedKey);
-            });
+        /**
+         * Listened on intiator.
+         */
+        self.on('publicKey', (publicKey) => {
+            let encryptedKey = { 'secret': crypto.encrypt(self.sharedSecret, publicKey) };
+            self.send(encryptedKey);
+        });
 
-            /**
-             * Listened on other peers.
-             * Ack the initiator that secret is received and is converted from base64 to original string.
-             */
-            self.on('secret', (sharedKey) => {
-                self.sharedSecret = crypto.decrypt(sharedKey, self.keys.privateKey);
-                self.emit('peerSecret', self.sharedSecret);
-                self.send({ 'secretAck': true });
-            });
+        /**
+         * Listened on other peers.
+         * Ack the initiator that secret is received and is converted from base64 to original string.
+         */
+        self.on('secret', (sharedKey) => {
+            self.sharedSecret = crypto.decrypt(sharedKey, self.keys.privateKey);
+            self.emit('peerSecret', self.sharedSecret);
+            self.send({ 'secretAck': true });
         });
     }
 
@@ -366,6 +375,7 @@ class GRTC extends EventEmitter {
             self.emit('peerSecureData', decryptedData);
         });
     }
+
 
     /**
      * Called by contructor and main entry point of app.
@@ -402,14 +412,14 @@ class GRTC extends EventEmitter {
             });
         });
 
-        // /**
-        //  * Use transport layer for more security.
-        //  * Default is false.
-        //  */
-        // if (self.useTransport) {
-        //     self.securityHandler();
-        //     self.on('transport', self.startTransportLayer);
-        // }
+        /**
+         * Use transport layer for more security.
+         * Default is false.
+         */
+        if (self.useTransport) {
+            self.securityHandler();
+            self.on('transport', self.startTransportLayer);
+        }
     }
 }
 

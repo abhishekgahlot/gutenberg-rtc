@@ -53,6 +53,10 @@
         $("#messages").append('<p>'+ JSON.stringify(d) + '</p>');
       });
 
+      grtc.on('peerClosed', function(p) {
+        console.log('Peer left');
+      })
+
       $("#btn").click(function(){
         grtc.send($("#msg").val());
         $("#messages").append('<p>'+ $("#msg").val() + '</p>');

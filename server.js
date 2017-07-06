@@ -76,11 +76,23 @@ app.get('/set/:key/:val', (req, res) => {
   }
 });
 
-app.get('/remove/:key', (req, res) => {
+app.get('/remove/:key/:val', (req, res) => {
+  let val = [];
+  try {
+    val = JSON.parse(new Buffer(req.params.val, 'base64').toString('ascii'));
+  } catch(e) {}
+
+  let peerID = val.peerID;
+  let type = val.type;
   let key = req.params.key;
-  let store = kv.get(key);
-  kv.put(key, []);
-  res.send(kv.get(key));
+  let data = {
+      peerID,
+      type,
+      initiator: true,
+      signal: val.signal
+  }
+  kv.put(key, [data]);
+  res.send(data);
 });
 
 app.get('/get/:key', (req, res) => {
