@@ -33,14 +33,6 @@
         var grtc = new GRTC(grtcID, window.location.origin);
       }
 
-      grtc.on('initiator', function(){
-        console.log('Initiator progress is done');
-      });
-
-      grtc.on('peerFound', function(peer) {
-        console.log('Peer found: ', peer);
-      });
-
       grtc.on('peerSignal', function(){
         console.log('Signal to peer done');
       });
@@ -55,7 +47,7 @@
 
       grtc.on('peerClosed', function(p) {
         console.log('Peer left');
-      })
+      });
 
       $("#btn").click(function(){
         grtc.send($("#msg").val());
