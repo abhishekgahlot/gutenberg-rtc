@@ -152,6 +152,7 @@ class GRTC extends EventEmitter {
         self.otherPeers = new Set();
         self.listenSignalTimer = 0;
         self.listenSignalCount = 0;
+        self.isConnected = false;
         self.keys = [];
         self.useTransport = useTransport;
         self.init();
@@ -288,6 +289,7 @@ class GRTC extends EventEmitter {
 
             self.peer.on('connect', () => {
                 self.emit('peerConnected');
+                self.isConnected = true;
             });
         
             self.peer.on('data', (data) => {
