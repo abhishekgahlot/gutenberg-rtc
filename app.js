@@ -297,6 +297,7 @@ class GRTC extends EventEmitter {
             });
 
             self.peer.on('close', (peer) => {
+                self.isConnected = false;
                 self.emit('peerClosed', peer);
                 clearInterval(self.listenSignalTimer);
                 delete self._events['initiator'];
