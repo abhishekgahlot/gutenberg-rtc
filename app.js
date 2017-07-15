@@ -37,7 +37,7 @@ class Signal {
         let self = this;
         return new Promise((resolve, reject) => {
             let data = { peerID: self.peerID, type: 'initial', signal: self.signalID };
-            jQuery.get(self.url + '/remove/' + self.grtcID + '/' + btoa(JSON.stringify(data)), (resp) => {
+            jQuery.post(self.url + '/remove' ,{ [self.grtcID] : btoa(JSON.stringify(data)) }, (resp) => {
                 resolve(resp);
             }).fail((e) => {
                 reject(e);
@@ -70,7 +70,7 @@ class Signal {
                 signal: self.signalID,
                 type: 'register'
             };
-            jQuery.get(self.url + '/set/' + self.grtcID + '/' + btoa(JSON.stringify(data)), (resp) => {
+            jQuery.post(self.url + '/set', { [self.grtcID] : btoa(JSON.stringify(data)) }, (resp) => {
                 resolve(resp);
             }).fail((e) => {
                 reject(e);
@@ -209,7 +209,7 @@ class GRTC extends EventEmitter {
     isInitiator() {
         let self = this;
         let data = { peerID: self.peerID, type: 'initial' };
-        jQuery.get(self.url + '/set/' + self.grtcID + '/' + btoa(JSON.stringify(data)), (resp) => {
+        jQuery.post(self.url + '/set', { [self.grtcID] : btoa(JSON.stringify(data)) }, (resp) => {
             self.emit('initiator', resp);
         }).fail((e) => {
             self.emit('initiator', false);
