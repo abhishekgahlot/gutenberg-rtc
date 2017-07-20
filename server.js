@@ -4,11 +4,14 @@
 
 const express = require('express');
 const path = require('path');
+const bodyParser = require('body-parser');
 const kv = require('./kv');
 
 const app = express();
 
 app.use(express.static('static'));
+app.use(bodyParser());
+
 
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -28,15 +31,16 @@ app.get('/tinymce', (req, res) => {
   res.sendFile(path.join(__dirname + '/static/tinymce.html'));
 });
 
-app.get('/set/:key/:val', (req, res) => {
-  let key = req.params.key;
+app.post('/set', (req, res) => {
+  let key = Object.keys(req.body)[0];
   let val = [];
   try {
-    val = JSON.parse(new Buffer(req.params.val, 'base64').toString('ascii'));
+    val = JSON.parse(new Buffer(req.body[key], 'base64').toString('ascii'));
   } catch(e) {}
 
   let force = req.query.force;
   let peerID = val.peerID;
+  let peerName = val.peerName;
   let type = val.type;
   let store = kv.get(key) || [];
   
@@ -47,6 +51,7 @@ app.get('/set/:key/:val', (req, res) => {
     let data = {
       peerID,
       type,
+      peerName,
       initiator: true
     }
     kv.put(key, [data]);
@@ -65,6 +70,7 @@ app.get('/set/:key/:val', (req, res) => {
     let data = {
       peerID,
       type,
+      peerName,
       initiator: false
     }
 
@@ -82,20 +88,22 @@ app.get('/set/:key/:val', (req, res) => {
   }
 });
 
-app.get('/remove/:key/:val', (req, res) => {
+app.post('/remove', (req, res) => {
+  let key = Object.keys(req.body)[0];
   let val = [];
   try {
-    val = JSON.parse(new Buffer(req.params.val, 'base64').toString('ascii'));
+    val = JSON.parse(new Buffer(req.body[key], 'base64').toString('ascii'));
   } catch(e) {}
 
   let peerID = val.peerID;
   let type = val.type;
-  let key = req.params.key;
+  let peerName = val.peerName;
   let data = {
       peerID,
       type,
       initiator: true,
-      signal: val.signal
+      signal: val.signal,
+      peerName,
   }
   kv.put(key, [data]);
   res.send(data);

@@ -21,6 +21,7 @@
     "standard": "^10.0.2"
   },
   "dependencies": {
+    "body-parser": "^1.17.2",
     "node-forge": "^0.7.1",
     "node-storage": "0.0.7",
     "operational-transformation": "0.0.7",
