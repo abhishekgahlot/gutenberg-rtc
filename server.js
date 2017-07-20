@@ -58,16 +58,24 @@ app.post('/set', (req, res) => {
     res.send(data);
   } else if (store.length && type === 'initial') {
     let exists = false;
+    let data = {};
+
     store.forEach((peer) => {
-      if (peer.peerID == peerID) {
-        res.send(peer);
+      if (peer.peerName === peerName) {
+        peer.peerID = peerID;
         exists = true;
+        peer.signal = false;
+        data = peer;
       }
     });
 
-    if (exists) { return; }
+    if (exists) {
+      kv.put(key, store);
+      res.send(data);
+      return;
+    }
 
-    let data = {
+    data = {
       peerID,
       type,
       peerName,

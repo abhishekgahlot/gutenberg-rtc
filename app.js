@@ -125,10 +125,10 @@ class TransportLayer {
 	decrypt( encrypted ) {
 		const iv = crypto.forge.util.createBuffer();
 		const data = crypto.forge.util.createBuffer();
-		iv.putBytes( crypto.forge.util.hexToBytes( encrypted.iv ));
-		data.putBytes( crypto.forge.util.hexToBytes( encrypted.encrypted ));
+		iv.putBytes( crypto.forge.util.hexToBytes( encrypted.iv ) );
+		data.putBytes( crypto.forge.util.hexToBytes( encrypted.encrypted ) );
 
-		const decipher = crypto.forge.cipher.createDecipher('AES-CBC', this.key );
+		const decipher = crypto.forge.cipher.createDecipher( 'AES-CBC', this.key );
 		decipher.start( { iv } );
 		decipher.update( data );
 		decipher.finish();
@@ -144,10 +144,11 @@ class GRTC extends EventEmitter {
 	/**
 	 * @param {string} grtcID global id representing document.
 	 * @param {string} url url of signal routes.
+	 * @param {string} peerName name of user/ wordpress username.
 	 * @param {bool} useTransport default false for encrypted session.
 	 * uuid is uniquely generated id for collaboration to happen
 	 */
-	constructor( grtcID, url, useTransport ) {
+	constructor( grtcID, url, peerName, useTransport ) {
 		super();
 		const self = this;
 		self.peer = null;
@@ -156,7 +157,7 @@ class GRTC extends EventEmitter {
 		self.url = url;
 		self.grtcID = grtcID;
 		self.peerID = GRTC.uuid();
-		self.peerName = window.localStorage.getItem( 'username' );
+		self.peerName = peerName;
 		self.otherPeers = new Set();
 		self.listenSignalTimer = 0;
 		self.listenSignalCount = 0;
@@ -333,9 +334,7 @@ class GRTC extends EventEmitter {
 				clearInterval( self.listenSignalTimer );
 				delete self._events.initiator;
 				delete self._events.peerFound;
-				self.signalInstance.clearSignal().then( () => {
-					self.init();
-				} );
+				self.init();
 			} );
 
 			/**
@@ -442,7 +441,7 @@ class GRTC extends EventEmitter {
 			 */
 			self.peerHandler().then( () => {
 				self.signalInstance = new Signal( self.url, self.grtcID, self.peerID, self.peerName, self.peerSignal );
-				self.signalInstance.updateSignal().then( ( data ) => {
+				self.signalInstance.updateSignal().then( () => {
 					self.listenSignal();
 				} );
 			} );

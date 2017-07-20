@@ -28,7 +28,7 @@
       if (grtcID.length == 0) {
         var grtcID = GRTC.uuid();
         window.history.pushState('', '', '?collaborate=' + grtcID);
-        var grtc = new GRTC(grtcID, window.location.origin);
+        var grtc = new GRTC(grtcID, 'http://localhost' + '/wp-json/collaborate');
       } else {
         var grtc = new GRTC(grtcID, window.location.origin);
       }
